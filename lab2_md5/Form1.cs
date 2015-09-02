@@ -15,7 +15,18 @@ namespace lab2_md5
         public Form1()
         {
             InitializeComponent();
-            MyMd5.md5test();
+            var c = MyMd5.md5test();
+            //String.Format("{0:X}", Dec)
+            string[] s =
+            {
+                String.Format("{0:X}", c[0]),
+                String.Format("{0:X}", c[1]),
+                String.Format("{0:X}", c[2]),
+                String.Format("{0:X}", c[3]),
+
+            };
+            label1.Text = s[0] + " " + s[1] + " " + s[2] + " " + s[3];
+
         }
     }
 }
