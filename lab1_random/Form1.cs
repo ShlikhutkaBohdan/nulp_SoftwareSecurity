@@ -16,16 +16,15 @@ namespace lab1_random
         public Form1()
         {
             InitializeComponent();
+            label2.Text = GetPeriod().ToString();
         }
 
         private void button1_Click(object sender, EventArgs e)
         {
             int count = (int) numericUpDown1.Value;
             var list = GetSequence(count);
-            long period = GetPeriod();
 
             textBox1.Text = GetSequenceText(list);
-            MessageBox.Show("Period = " + period);
 
         }
 
