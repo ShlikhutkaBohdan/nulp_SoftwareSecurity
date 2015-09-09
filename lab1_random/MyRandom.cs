@@ -8,27 +8,27 @@ namespace lab1_random
 {
     public class MyRandom
     {
-        private static long xn;
+        private long xn;
 
-        private static readonly long m;
-        private static readonly long a;
-        private static readonly long c;
-        private static readonly long x0;
+        private readonly long m;
+        private readonly long a;
+        private readonly long c;
+        private readonly long x0;
 
-        static MyRandom()
+        public MyRandom(long x0, long m, long a, long c)
         {
-            x0 = 5;
-            m = (long) (Math.Pow(2, 22) - 1);
-            a = (long) Math.Pow(9, 3);
-            c = 33;
+            this.x0 = x0;//5;
+            this.m = m;//(long) (Math.Pow(2, 22) - 1);
+            this.a = a;//(long) Math.Pow(9, 3);
+            this.c = c;//33;
         }
 
-        public static void srand()
+        public void srand()
         {
             xn = x0;
         }
 
-        public static long random()
+        public long random()
         {
             long res = xn;
             xn = (a*xn + c)%m;
