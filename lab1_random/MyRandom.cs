@@ -8,14 +8,14 @@ namespace lab1_random
 {
     public class MyRandom
     {
-        private long xn;
+        private ulong xn;
 
-        private readonly long m;
-        private readonly long a;
-        private readonly long c;
-        private readonly long x0;
+        private readonly ulong m;
+        private readonly ulong a;
+        private readonly ulong c;
+        private readonly ulong x0;
 
-        public MyRandom(long x0, long m, long a, long c)
+        public MyRandom(ulong x0, ulong m, ulong a, ulong c)
         {
             this.x0 = x0;//5;
             this.m = m;//(long) (Math.Pow(2, 22) - 1);
@@ -28,9 +28,9 @@ namespace lab1_random
             xn = x0;
         }
 
-        public long random()
+
+        public ulong random()
         {
-            long res = xn;
             xn = (a*xn + c)%m;
             return xn;
         }

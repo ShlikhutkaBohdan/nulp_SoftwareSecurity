@@ -1,129 +1,190 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
-using System.Runtime.InteropServices.ComTypes;
+using System;
+using System.IO;
 using System.Text;
-using System.Threading.Tasks;
+
 
 namespace lab2_md5
 {
-    public class MyMd5
-    {
-        public static uint[] md5test()
+
+	public class MyMD5
+	{
+
+	    protected static readonly uint[] T = new uint[64];
+
+	    static MyMD5()
+	    {
+	        long k = (long)Math.Pow(2, 32);//2 ^ 32
+            for (int i = 1; i <= 64; i++)
+                T[i-1] = (uint)(long)(k * Math.Abs(Math.Sin(i)));
+	    }
+		
+        public const uint A0 = 0x67452301;
+        public const uint B0 = 0xEFCDAB89;
+        public const uint C0 = 0x98BADCFE;
+        public const uint D0 = 0X10325476;
+
+	    public string GetMd5FromString(string message)
+	    {
+	        Stream stream = GenerateStreamFromString(message);
+            return Md5FromStream(stream);
+	    }
+
+        public string GetMd5FromFile(string filename)
+	    {
+            using (FileStream SourceStream = File.Open(filename, FileMode.Open))
+            {
+                return Md5FromStream(SourceStream);
+            }
+	    }
+
+        private Stream GenerateStreamFromString(string s)
         {
-            String res = "";
-            //byte[] toBytes = Encoding.ASCII.GetBytes(somestring);
-            byte[] inputBytes = Encoding.ASCII.GetBytes(res);//GetBytes(res);
-            byte[] s1Arr = step1(inputBytes);
-            byte[] s2Arr = step2(s1Arr, inputBytes.Length);
-            return step34(s2Arr);
+            MemoryStream stream = new MemoryStream();
+            StreamWriter writer = new StreamWriter(stream);
+            writer.Write(s);
+            writer.Flush();
+            stream.Position = 0;
+            return stream;
         }
 
-        private static int[] sS = 
+        private static uint MyCLS(uint uiNumber, ushort shift)
         {
-             7, 12, 17, 22,  7, 12, 17, 22,  7, 12, 17, 22,  7, 12, 17, 22 ,
-         5,  9, 14, 20,  5,  9, 14, 20,  5,  9, 14, 20,  5,  9, 14, 20 ,
-         4, 11, 16, 23,  4, 11, 16, 23,  4, 11, 16, 23,  4, 11, 16, 23 ,
+            return ((uiNumber >> 32 - shift) | (uiNumber << shift));
+        }
 
-         6, 10, 15, 21,  6, 10, 15, 21,  6, 10, 15, 21,  6, 10, 15, 21 
-        };
-
-        static uint[] step34(byte[] arrBytes)
+        private string Md5FromStream(Stream stream)
         {
-            uint a0 = 0x67452301;
-            uint b0 = 0xefcdab89;
-            uint c0 = 0x98badcfe;
-            uint d0 = 0x10325476;
-            int len = arrBytes.Length;//in bytes
-            int blocksCount = len/64;//one block = 64*8=512 bits
-            for (int iBlock = 0; iBlock < blocksCount; ++iBlock)
+
+            long oldLength = stream.Length;
+            byte[] paddingBytes = CreateTail(oldLength);
+            
+            uint a = A0;
+            uint b = B0;
+            uint c = C0;
+            uint d = D0;
+            
+            byte[] buffer = new byte[64];//512 bits
+            uint[] block = new uint[16];
+
+            int len;
+            bool f = false;
+            bool isStreamPadding = false;
+
+            MemoryStream lastBlockStream = new MemoryStream();
+            do
             {
-                uint a = a0;
-                uint b = b0;
-                uint c = c0;
-                uint d = d0;
-                byte[] block = new byte[64];//512 bits
-                arrBytes.CopyTo(block, iBlock*64);
-                for (int i = 0; i < 64; ++i)
+                len = stream.Read(buffer, 0, 64);
+
+                if (len == 0 && isStreamPadding)
+                    break;
+                if (len < 64)
                 {
-                    long func = 0;
-                    long k = 0;
-                    if (i >= 0 && i <= 15)
-                    {
-                        func = (b & c) | ((~b) & d);//fF
-                        k = i;
-                    }
-                    else if (i >= 16 && i <= 31)
-                    {
-                        func = (b & d) | (c & (~d));//fG
-                        k = (5*i + 1)%16;
-                    }
-                    else if (i >= 17 && i <= 47)
-                    {
-                        func = b ^ c ^ d;//fH
-                        k = (3*i + 5)%16;
-                    }
-                    else if (i >= 48 && i <= 63)
-                    {
-                        func = c ^ (b | (~d));//fI
-                        k = (7*i)%16;
-                    }
-                    uint d1 = d;
-                    d = c;
-                    c = b;
-                    b = b + (uint)((a + func + GetT(i) + block[k]) << sS[i]);
-                    a = d1;
+                    lastBlockStream.Write(buffer, 0, len);
+                    lastBlockStream.Write(paddingBytes, 0, paddingBytes.Length);
+                    stream = lastBlockStream;
+                    stream.Position = 0;
+                    len = -1;
+                    isStreamPadding = true;
+                    continue;
                 }
-                a0 += a;
-                b0 += b;
-                c0 += c;
-                d0 += d;
-            }
+                int index = 0;
+                for (int j = 0; j < 61; j += 4)
+                    block[j >> 2] = (((uint) buffer[(j + 3)]) << 24) |
+                                    (((uint) buffer[(j + 2)]) << 16) |
+                                    (((uint) buffer[(j + 1)]) << 8) |
+                                    (((uint) buffer[(j)]));
+                ProcessBlock(block, ref a, ref b, ref c, ref d);
+            } while (len != 0);
+		    return ReverseByte(a).ToString("X8") +
+                ReverseByte(b).ToString("X8") +
+                ReverseByte(c).ToString("X8") +
+                ReverseByte(d).ToString("X8"); ;
+		}
 
-            return new uint[]{a0, b0, c0, d0};
-        }
-
-        
-        static long GetT(int i)
+        private static readonly ushort[,] _sS = 
         {
-            return (long)(Math.Abs(Math.Sin(i))*Math.Pow(2, 32));
-        }
+            {7, 12, 17, 22},
+            {5, 9, 14, 20},
+            {4, 11, 16, 23},
+            {6, 10, 15, 21}
+        };
+		
+		private void ProcessBlock(uint[] X, ref uint A,ref uint B,ref uint C, ref uint D)//X - block 512 byte
+		{
+		    uint a = A;
+		    uint b = B;
+		    uint c = C;
+		    uint d = D;
+            ushort[,] sArr = _sS;
+		    uint cycleNum = 0;
 
-        static byte[] step2(byte[] arrBytes, long oldLen)
+		    for (uint i = 0; i < 64; ++i)
+		    {
+		        cycleNum = i/16;
+		        uint column = i%4;
+		        uint k = i;
+                ushort s = sArr[cycleNum, column];
+                switch (cycleNum)
+		        {
+                    case 0:
+                        //f function
+                        a = b + MyCLS((a + ((b & c) | (~(b) & d)) + X[k] + T[i]), s);
+                        break;
+                    case 1:
+                        k = (k * 5 + 1) % 16;
+                        //g function
+                        a = b + MyCLS((a + ((b & d) | (c & ~d)) + X[k] + T[i]), s);
+                        break;
+                    case 2:
+		                k = (k*3 + 5)% 16;
+                        //h function
+                        a = b + MyCLS((a + (b ^ c ^ d) + X[k] + T[i]), s);
+                        break;
+                    case 3:
+                        k = (k * 7) %16;
+                        //i function
+                        a = b + MyCLS((a + (c ^ (b | ~d)) + X[k] + T[i]), s);
+                        break;   
+		        }
+		        uint temp = d;
+                d = c;
+                c = b;
+                b = a;
+                a = temp;
+		    }
+		    A += a;
+		    B += b;
+		    C += c;
+		    D += d;
+		}
+       
+
+        private byte[] CreateTail(long length)
         {
-            long lenInBits = oldLen*8;
-            byte[] lengthInArray = BitConverter.GetBytes(lenInBits);
-            //lengthInArray = lengthInArray.Reverse().ToArray();
-            lengthInArray.CopyTo(arrBytes, arrBytes.Length-8);
-            return arrBytes;
+            uint pad;
+            byte[] bMsg;
+            ulong sizeMsg;
+            uint sizeMsgBuff;
+            long temp = (448 - ((length * 8) % 512));
+            pad = (uint)((temp + 512) % 512);
+            if (pad == 0)
+                pad = 512;
+            sizeMsgBuff = ((0) + (pad / 8) + 8);//58
+            sizeMsg = (ulong)length * 8;
+            bMsg = new byte[sizeMsgBuff];
+            bMsg[0] |= 0x80;
+            for (int i = 8; i > 0; i--)
+                bMsg[sizeMsgBuff - i] = (byte)(sizeMsg >> ((8 - i) * 8) & 0x00000000000000ff);
+            return bMsg;
         }
 
-        static byte[] GetBytes(string str)
+        private static uint ReverseByte(uint uiNumber)
         {
-            byte[] bytes = new byte[str.Length * sizeof(char)];
-            System.Buffer.BlockCopy(str.ToCharArray(), 0, bytes, 0, bytes.Length);
-            return bytes;
+            return (((uiNumber & 0x000000ff) << 24) |
+                        (uiNumber >> 24) |
+                    ((uiNumber & 0x00ff0000) >> 8) |
+                    ((uiNumber & 0x0000ff00) << 8));
         }
+	}
 
-        static byte[] step1(byte[] arrBytes)
-        {
-            const int MOD = 56;
-            const int DIV = 64;
-            int len = arrBytes.Length;
-            int m = len % DIV;
-            int add = 0;
-            if (m < MOD)
-                add = MOD - m;
-            else
-            {
-                add = DIV - (m - MOD);
-            }
-            byte[] newArr = new byte[len + add + DIV/8];//array, addition, lenght of message
-            arrBytes.CopyTo(newArr, 0);
-            newArr[len] = 128; // 2^7 - 1 and zeroes
-
-            return newArr;
-        }
-    }
 }

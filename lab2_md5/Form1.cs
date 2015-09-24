@@ -15,18 +15,19 @@ namespace lab2_md5
         public Form1()
         {
             InitializeComponent();
-            var c = MyMd5.md5test();
-            //String.Format("{0:X}", Dec)
-            string[] s =
-            {
-                String.Format("{0:X}", c[0]),
-                String.Format("{0:X}", c[1]),
-                String.Format("{0:X}", c[2]),
-                String.Format("{0:X}", c[3]),
+            
+        }
 
-            };
-            label1.Text = s[0] + " " + s[1] + " " + s[2] + " " + s[3];
+        private void button1_Click(object sender, EventArgs e)
+        {
+            MyMD5 md5 = new MyMD5();
+            label1.Text = md5.GetMd5FromString(textBox1.Text);
+        }
 
+        private void button2_Click(object sender, EventArgs e)
+        {
+            MyMD5 md5 = new MyMD5();
+            label1.Text = md5.GetMd5FromFile(@"e:\lab1_random.exe");
         }
     }
 }
