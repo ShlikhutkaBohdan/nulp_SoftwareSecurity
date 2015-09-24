@@ -9,6 +9,10 @@ namespace lab2_md5
 	public class MyMD5
 	{
 
+	    public delegate void OnProgressChangedEvent(ushort persentage);
+
+	    public event OnProgressChangedEvent OnProgressChanged;
+
 	    protected static readonly uint[] T = new uint[64];
 
 	    static MyMD5()
@@ -71,8 +75,10 @@ namespace lab2_md5
             bool isStreamPadding = false;
 
             MemoryStream lastBlockStream = new MemoryStream();
+            ulong i = 0;
             do
             {
+                //begin cycle
                 len = stream.Read(buffer, 0, 64);
 
                 if (len == 0 && isStreamPadding)
@@ -94,6 +100,14 @@ namespace lab2_md5
                                     (((uint) buffer[(j + 1)]) << 8) |
                                     (((uint) buffer[(j)]));
                 ProcessBlock(block, ref a, ref b, ref c, ref d);
+
+                //for progress update
+                i++;
+                if (OnProgressChanged != null)
+                {
+                    ushort persentage = (ushort) ((i*64)/(double) oldLength*100);
+                    OnProgressChanged(persentage);
+                }
             } while (len != 0);
 		    return ReverseByte(a).ToString("X8") +
                 ReverseByte(b).ToString("X8") +
