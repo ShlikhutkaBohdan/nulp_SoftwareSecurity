@@ -51,9 +51,9 @@ namespace lab2_md5
             return stream;
         }
 
-        private static uint MyCLS(uint uiNumber, ushort shift)
+        private static uint MyCLS(uint number, ushort shift)
         {
-            return ((uiNumber >> 32 - shift) | (uiNumber << shift));
+            return ((number >> 32 - shift) | (number << shift));
         }
 
         private string Md5FromStream(Stream stream)
@@ -175,29 +175,25 @@ namespace lab2_md5
 
         private byte[] CreateTail(long length)
         {
-            uint pad;
-            byte[] bMsg;
-            ulong sizeMsg;
-            uint sizeMsgBuff;
             long temp = (448 - ((length * 8) % 512));
-            pad = (uint)((temp + 512) % 512);
+            uint pad = (uint)((temp + 512) % 512);
             if (pad == 0)
                 pad = 512;
-            sizeMsgBuff = ((0) + (pad / 8) + 8);//58
-            sizeMsg = (ulong)length * 8;
-            bMsg = new byte[sizeMsgBuff];
-            bMsg[0] |= 0x80;
+            uint sizeMsgBuff = ((pad / 8) + 8);//58
+            ulong sizeMsg = (ulong)length * 8;
+            byte[] tail = new byte[sizeMsgBuff];
+            tail[0] |= 0x80;
             for (int i = 8; i > 0; i--)
-                bMsg[sizeMsgBuff - i] = (byte)(sizeMsg >> ((8 - i) * 8) & 0x00000000000000ff);
-            return bMsg;
+                tail[sizeMsgBuff - i] = (byte)(sizeMsg >> ((8 - i) * 8) & 0x00000000000000ff);
+            return tail;
         }
 
-        private static uint ReverseByte(uint uiNumber)
+        private static uint ReverseByte(uint number)
         {
-            return (((uiNumber & 0x000000ff) << 24) |
-                        (uiNumber >> 24) |
-                    ((uiNumber & 0x00ff0000) >> 8) |
-                    ((uiNumber & 0x0000ff00) << 8));
+            return (((number & 0x000000ff) << 24) |
+                        (number >> 24) |
+                    ((number & 0x00ff0000) >> 8) |
+                    ((number & 0x0000ff00) << 8));
         }
 	}
 
