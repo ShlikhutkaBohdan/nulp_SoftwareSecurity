@@ -30,17 +30,32 @@ namespace lab2_md5
 	    public string GetMd5FromString(string message)
 	    {
 	        Stream stream = GenerateStreamFromString(message);
-            return Md5FromStream(stream);
+            uint[] abcd = Md5FromStream(stream);
+            return ReverseByte(abcd[0]).ToString("X8") +
+            ReverseByte(abcd[1]).ToString("X8") +
+            ReverseByte(abcd[2]).ToString("X8") +
+            ReverseByte(abcd[3]).ToString("X8"); 
 	    }
+
+        public uint[] GetMd5ArrFromString(string message)
+        {
+            Stream stream = GenerateStreamFromString(message);
+            uint[] abcd = Md5FromStream(stream);
+            return abcd;
+        }
 
         public string GetMd5FromFile(string filename)
 	    {
             using (FileStream SourceStream = File.Open(filename, FileMode.Open))
             {
-                return Md5FromStream(SourceStream);
+                uint[] abcd = Md5FromStream(SourceStream);
+                return ReverseByte(abcd[0]).ToString("X8") +
+                ReverseByte(abcd[1]).ToString("X8") +
+                ReverseByte(abcd[2]).ToString("X8") +
+                ReverseByte(abcd[3]).ToString("X8"); 
             }
 	    }
-
+        
         private Stream GenerateStreamFromString(string s)
         {
             MemoryStream stream = new MemoryStream();
@@ -56,7 +71,7 @@ namespace lab2_md5
             return ((number >> 32 - shift) | (number << shift));
         }
 
-        private string Md5FromStream(Stream stream)
+        private uint[] Md5FromStream(Stream stream)
         {
 
             long oldLength = stream.Length;
@@ -109,11 +124,10 @@ namespace lab2_md5
                     OnProgressChanged(persentage);
                 }
             } while (len != 0);
-		    return ReverseByte(a).ToString("X8") +
-                ReverseByte(b).ToString("X8") +
-                ReverseByte(c).ToString("X8") +
-                ReverseByte(d).ToString("X8"); ;
-		}
+
+            uint[] abcd = new[] { ReverseByte(a), ReverseByte(b), ReverseByte(c), ReverseByte(d) };
+            return abcd;
+        }
 
         private static readonly ushort[,] _sS = 
         {
