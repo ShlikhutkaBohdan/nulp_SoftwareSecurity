@@ -2,43 +2,43 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using lab1_random;
 using lab2_md5;
+using lab3_rc5.model;
 
-namespace lab3_rc5
+namespace lab3_rc5.model
 {
-    class MyRC5
+    public class MyRc5W64 : MyRc5//WordType - for a and b
     {
-        public delegate void ProgressChangedEvent(int persents);
-        public delegate void DecryptedPasswordFailedEvent();
-        public delegate void ProcessEndedEvent();
-
-        public event ProgressChangedEvent OnProgressChanged;
-        public event DecryptedPasswordFailedEvent OnDecryptedPasswordFailed;
-        public event ProcessEndedEvent OnProcessEnded;
-
-        public MyRC5(string password)
+        public override event ProgressChangedEvent OnProgressChanged;
+        public override event DecryptedPasswordFailedEvent OnDecryptedPasswordFailed;
+        public override event ProcessEndedEvent OnProcessEnded;
+       
+        public MyRc5W64(string password)
         {
+            //Type type = typeof (WordType);
+            _mW = sizeof(ulong);//8;//(byte) (Marshal.SizeOf(type)*8);//8;//64 bits
             _numberOfRounds = 16;
             SetPassword(password);
         }
 
-        public void SetPassword(string password)
+        public override void SetPassword(string password)
         {
-            //password = "a";
+            password = "a";
             
             MyMD5 myMd5 = new MyMD5();
             var md5 = myMd5.GetMd5ArrFromString(password);
             _mKey = md5.SelectMany(BitConverter.GetBytes).ToArray();
             _mPasswordMd5 = _mKey;
             
-            /*Encrypt("C:\\Users\\Boday-Alfaro\\Desktop\\MpShlikhutkaLab4.docx", "C:\\Users\\Boday-Alfaro\\Desktop\\qwe1");
+            Encrypt("C:\\Users\\Boday-Alfaro\\Desktop\\MpShlikhutkaLab4.docx", "C:\\Users\\Boday-Alfaro\\Desktop\\qwe1");
             Decrypt("C:\\Users\\Boday-Alfaro\\Desktop\\qwe1", "C:\\Users\\Boday-Alfaro\\Desktop\\qwe1.docx");
-            MessageBox.Show("done");*/
+            MessageBox.Show("done");
         }
 
-        public void Encrypt(string source, string dest)
+        public override void Encrypt(string source, string dest)
         {
             if (File.Exists(dest))
                 File.Delete(dest);//delete old file
@@ -51,7 +51,7 @@ namespace lab3_rc5
                 OnProcessEnded();
         }
 
-        public void Decrypt(string source, string dest)
+        public override void Decrypt(string source, string dest)
         {
             if (File.Exists(dest))
                 File.Delete(dest);
@@ -210,9 +210,9 @@ namespace lab3_rc5
             Buffer.BlockCopy(key, 0, l, 0, b);
             ulong t = (ulong) (2 * _numberOfRounds + 2);
             var s = new ulong[t];
-            s[0] = Pw64;
+            s[0] = _mPw;
             for (i = 1; i < t; i++)
-                s[i] = s[i - 1] + Qw64;
+                s[i] = s[i - 1] + _mQw;
             i = j = 0;
             for (ulong k = 0; k < 3 * Math.Max(t, c); k++)
             {
@@ -226,16 +226,17 @@ namespace lab3_rc5
 
         ulong RotateLeft(ulong value, int offset, bool reverse = false)
         {
-            if (reverse) 
-                return (value << (offset % 64)) | (value >> (64 - (offset % 64)));
-            return (value >> (offset % 64)) | (value << (64 - (offset % 64)));
+            int bitLength = _mW << 3;//*8
+            if (reverse)
+                return (value << (offset % bitLength)) | (value >> (bitLength - (offset % bitLength)));
+            return (value >> (offset % bitLength)) | (value << (bitLength - (offset % bitLength)));
 
         }
 
-        private const ulong Pw64 = 0xb7e151628aed2a6b;
-        private const ulong Qw64 = 0x9e3779b97f4a7c15;
+        private ulong _mPw = Pw64;
+        private ulong _mQw = Qw64;
 
-        private byte _mW = 8;
+        private byte _mW;
         private byte _numberOfRounds;// = 16;
         private byte[] _mPasswordMd5;
         private byte[] _mKey;//key in byte format

@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using lab3_rc5.model;
 
 namespace lab3_rc5
 {
@@ -15,7 +16,7 @@ namespace lab3_rc5
         public Form1()
         {
             InitializeComponent();
-            MyRC5 crypter = new MyRC5("password");
+            MyRc5W64 crypter = new MyRc5W64("password");
             //myRc5.
         }
 
@@ -80,7 +81,7 @@ namespace lab3_rc5
                 {
                     try
                     {
-                        MyRC5 crypter = new MyRC5(password);
+                        MyRc5 crypter = MyRc5.GetRc5(_mKeyLength, password);
                         crypter.OnDecryptedPasswordFailed += CrypterOnOnDecryptedPasswordFailed;
                         crypter.OnProgressChanged += CrypterOnOnProgressChanged;
                         crypter.OnProcessEnded += CrypterOnOnProcessEnded;
@@ -120,6 +121,8 @@ namespace lab3_rc5
             MessageBox.Show("Password is wrong. Please input another password and try again!");
         }
 
+        private int _mKeyLength = 16;
+
         private async void button2_Click(object sender, EventArgs e)
         {//decrypt
             if (_mIsProcessRun)
@@ -144,7 +147,7 @@ namespace lab3_rc5
                 {
                     try
                     {
-                        MyRC5 crypter = new MyRC5(password);
+                        MyRc5 crypter = MyRc5.GetRc5(_mKeyLength, password);
                         crypter.OnDecryptedPasswordFailed += CrypterOnOnDecryptedPasswordFailed;
                         crypter.OnProgressChanged += CrypterOnOnProgressChanged;
                         crypter.OnProcessEnded += CrypterOnOnProcessEnded;
