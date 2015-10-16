@@ -15,6 +15,7 @@ namespace lab3_rc5
         public Form1()
         {
             InitializeComponent();
+            MyRC5 crypter = new MyRC5("password");
             //myRc5.
         }
 
@@ -67,8 +68,8 @@ namespace lab3_rc5
                     throw new Exception("Encrypted file path not inputed! Please output path");
                 if (password.Equals(""))
                     throw new Exception("Password not inputed! Please input password");
-                FileCrypter crypter = new FileCrypter(password);
-                crypter.Crypt(plainFilePath, cryptedFilePath);
+                MyRC5 crypter = new MyRC5(password);
+                crypter.Encrypt(plainFilePath, cryptedFilePath);
                 MessageBox.Show("File encrypted");
             }
             catch (Exception ex)
@@ -90,7 +91,7 @@ namespace lab3_rc5
                     throw new Exception("Decrypted file path not inputed! Please input path");
                 if (password.Equals(""))
                     throw new Exception("Password not inputed! Please input password");
-                FileCrypter crypter = new FileCrypter(password);
+                MyRC5 crypter = new MyRC5(password);
                 crypter.Decrypt(cryptedFilePath, plainFilePath);
                 MessageBox.Show("File decrypted");
             }
