@@ -55,8 +55,16 @@ namespace lab3_rc5
             }
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        private bool _mIsProcessRun = false;
+
+        private async void button1_Click(object sender, EventArgs e)
         {//crypt
+            if (_mIsProcessRun)
+            {
+                MessageBox.Show("Process is run!");
+                return;
+            }
+            _mIsProcessRun = true;
             string plainFilePath = textBox1.Text;//source
             string cryptedFilePath = textBox2.Text;//dest
             string password = textBox3.Text;
@@ -68,9 +76,23 @@ namespace lab3_rc5
                     throw new Exception("Encrypted file path not inputed! Please output path");
                 if (password.Equals(""))
                     throw new Exception("Password not inputed! Please input password");
-                MyRC5 crypter = new MyRC5(password);
-                crypter.Encrypt(plainFilePath, cryptedFilePath);
-                MessageBox.Show("File encrypted");
+                await Task.Factory.StartNew(() =>
+                {
+                    try
+                    {
+                        MyRC5 crypter = new MyRC5(password);
+                        crypter.OnDecryptedPasswordFailed += CrypterOnOnDecryptedPasswordFailed;
+                        crypter.OnProgressChanged += CrypterOnOnProgressChanged;
+                        crypter.OnProcessEnded += CrypterOnOnProcessEnded;
+                        crypter.Encrypt(plainFilePath, cryptedFilePath);
+                        _mIsProcessRun = false;
+                        MessageBox.Show("Encryption complete");
+                    }
+                    catch (Exception)
+                    {
+                        MessageBox.Show("Some error with encryption");
+                    }
+                });
             }
             catch (Exception ex)
             {
@@ -78,8 +100,34 @@ namespace lab3_rc5
             }
         }
 
-        private void button2_Click(object sender, EventArgs e)
+        private void CrypterOnOnProcessEnded()
+        {
+            //MessageBox.Show("Process ended");
+        }
+
+        private void CrypterOnOnProgressChanged(int persents)
+        {
+            progressBar1.Invoke((MethodInvoker) delegate
+            {
+                progressBar1.Value = persents;
+            });
+            //throw new NotImplementedException();
+        }
+
+        private void CrypterOnOnDecryptedPasswordFailed()
+        {
+            //throw new NotImplementedException();
+            MessageBox.Show("Password is wrong. Please input another password and try again!");
+        }
+
+        private async void button2_Click(object sender, EventArgs e)
         {//decrypt
+            if (_mIsProcessRun)
+            {
+                MessageBox.Show("Process is run!");
+                return;
+            }
+            _mIsProcessRun = true;
             string cryptedFilePath = textBox1.Text;//source
             string plainFilePath = textBox2.Text;//dest
             string password = textBox3.Text;
@@ -91,9 +139,25 @@ namespace lab3_rc5
                     throw new Exception("Decrypted file path not inputed! Please input path");
                 if (password.Equals(""))
                     throw new Exception("Password not inputed! Please input password");
-                MyRC5 crypter = new MyRC5(password);
-                crypter.Decrypt(cryptedFilePath, plainFilePath);
-                MessageBox.Show("File decrypted");
+
+                await Task.Factory.StartNew(() =>
+                {
+                    try
+                    {
+                        MyRC5 crypter = new MyRC5(password);
+                        crypter.OnDecryptedPasswordFailed += CrypterOnOnDecryptedPasswordFailed;
+                        crypter.OnProgressChanged += CrypterOnOnProgressChanged;
+                        crypter.OnProcessEnded += CrypterOnOnProcessEnded;
+                        crypter.Decrypt(cryptedFilePath, plainFilePath);
+                        _mIsProcessRun = false;
+                        MessageBox.Show("Decription complete");
+                    }
+                    catch (Exception)
+                    {
+                        MessageBox.Show("Some error with Decription");
+                    }
+                });
+                
             }
             catch (Exception ex)
             {
