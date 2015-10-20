@@ -16,28 +16,16 @@ namespace lab3_rc5.model
         public override event DecryptedPasswordFailedEvent OnDecryptedPasswordFailed;
         public override event ProcessEndedEvent OnProcessEnded;
        
-        public MyRc5W64(string password)
+        public MyRc5W64(string password, int keyLength, byte numberOfRounds)
         {
             //Type type = typeof (WordType);
             _mW = sizeof(ulong);//8;//(byte) (Marshal.SizeOf(type)*8);//8;//64 bits
-            _numberOfRounds = 16;
+            _numberOfRounds = numberOfRounds;//16;
+            _mKeyLength = keyLength;
+            _numberOfRounds = numberOfRounds;
             SetPassword(password);
         }
-
-        public override void SetPassword(string password)
-        {
-            password = "a";
-            
-            MyMD5 myMd5 = new MyMD5();
-            var md5 = myMd5.GetMd5ArrFromString(password);
-            _mKey = md5.SelectMany(BitConverter.GetBytes).ToArray();
-            _mPasswordMd5 = _mKey;
-            
-            Encrypt("C:\\Users\\Boday-Alfaro\\Desktop\\MpShlikhutkaLab4.docx", "C:\\Users\\Boday-Alfaro\\Desktop\\qwe1");
-            Decrypt("C:\\Users\\Boday-Alfaro\\Desktop\\qwe1", "C:\\Users\\Boday-Alfaro\\Desktop\\qwe1.docx");
-            MessageBox.Show("done");
-        }
-
+       
         public override void Encrypt(string source, string dest)
         {
             if (File.Exists(dest))
@@ -72,10 +60,10 @@ namespace lab3_rc5.model
         {
             byte[] key = _mKey;
             var s = GenerateSubKeys(key);
-            ulong a0 = 0, b0 = 0;
+            ulong a0 = 0, b0 = 0, a, b;
             MyRandom myRandom = new MyRandom(31, 2147483647, 16807, 17711);
-            var a = myRandom.random();//generate random a and b
-            var b = myRandom.random();
+            a0 = myRandom.random();//generate random a and b
+            b0 = myRandom.random();
             int w2 =  (_mW<<1);
             var buffer = new byte[w2];//buffer of a and b
             inputStream.Position = 0;
@@ -83,23 +71,24 @@ namespace lab3_rc5.model
             int paddingLength = 0;
             int readBytesCount;
             do{//main cycle
-                EncryptBlock(ref a0, ref b0, ref a, ref b, s);
-                outputStream.Write(BitConverter.GetBytes(a), 0, _mW);
-                outputStream.Write(BitConverter.GetBytes(b), 0, _mW);
                 readBytesCount = inputStream.Read(buffer, 0, w2);
                 if (readBytesCount == 0)
                     break;
-                if (readBytesCount < w2)//if the last block < w2
-                    paddingLength = w2 - readBytesCount;//fill padding by random bytes
                 a = BitConverter.ToUInt64(buffer, 0);//get a
                 b = BitConverter.ToUInt64(buffer, _mW);//get b
+                EncryptBlock(ref a0, ref b0, ref a, ref b, s);
+                outputStream.Write(BitConverter.GetBytes(a0), 0, _mW);
+                outputStream.Write(BitConverter.GetBytes(b0), 0, _mW);
+                if (readBytesCount < w2)//if the last block < w2
+                    paddingLength = w2 - readBytesCount;//fill padding by random bytes
+                
                 if (OnProgressChanged != null)//calculate progress
                     OnProgressChanged((int)(inputStream.Position / (float)inputStream.Length*100));
             }while (true);
-            int countOfPaddingBlocks = _mPasswordMd5.Length + 1;//space on md5 + length of prev padding
+            int countOfPaddingBlocks = _mKey.Length + 1;//space on md5 + length of prev padding
             countOfPaddingBlocks = countOfPaddingBlocks/w2 + (countOfPaddingBlocks/w2 > 0 ? 1 : 0);
             buffer = new byte[w2*countOfPaddingBlocks];
-            _mPasswordMd5.CopyTo(buffer, 0);//password md5 padding
+            _mKey.CopyTo(buffer, 0);//password md5 padding
             buffer[buffer.Length-1] = (byte)paddingLength;//padding length
             for (int i = 0; i < countOfPaddingBlocks; ++i)//padding filler
             {
@@ -118,9 +107,11 @@ namespace lab3_rc5.model
             byte[] key = _mKey; //key in byte format
             var s = GenerateSubKeys(key);
             ulong a0 = 0, b0 = 0, a, b;
-            int w2 = _mW << 1, i, l = _mPasswordMd5.Length + 1;
+            MyRandom myRandom = new MyRandom(31, 2147483647, 16807, 17711);
+            a0 = myRandom.random();//generate random a and b
+            b0 = myRandom.random();
+            int w2 = _mW << 1, i, l = _mKey.Length + 1;
             var buffer = new byte[w2];
-            bool fl = false;
             inputStream.Position = 0;
             outputStream.Position = 0;
             l = l / w2 + (l / w2 > 0 ? 1 : 0);//number of padding blocks
@@ -130,12 +121,9 @@ namespace lab3_rc5.model
                 a = BitConverter.ToUInt64(buffer, 0);
                 b = BitConverter.ToUInt64(buffer, _mW);
                 DecryptBlock(ref a0, ref b0, ref a, ref b, s);
-                if (fl)
-                {
-                    outputStream.Write(BitConverter.GetBytes(a), 0, _mW);
-                    outputStream.Write(BitConverter.GetBytes(b), 0, _mW);
-                }
-                fl = true;
+                outputStream.Write(BitConverter.GetBytes(a), 0, _mW);
+                outputStream.Write(BitConverter.GetBytes(b), 0, _mW);
+                
                 if (OnProgressChanged != null)//calculate progress
                     OnProgressChanged((int)(inputStream.Position / (float)inputStream.Length * 100));
             } while (inputStream.Position < inputStream.Length-l*w2-w2);
@@ -152,9 +140,9 @@ namespace lab3_rc5.model
                 paddingStream.Write(BitConverter.GetBytes(b), 0, _mW);
 
             } while (inputStream.Position < inputStream.Length);
-            for (i = 0; i < _mPasswordMd5.Length; ++i)//check md5
+            for (i = 0; i < _mKey.Length; ++i)//check md5
             {//16-31 password md5
-                if (_mPasswordMd5[i] != padding[i + 16])
+                if (_mKey[i] != padding[i + 16])
                 {
                     //MessageBox.Show("not right password");
                     if (OnDecryptedPasswordFailed != null)
@@ -201,24 +189,25 @@ namespace lab3_rc5.model
             b0 = prevB;
         }
 
-        private ulong[] GenerateSubKeys(byte[] key)//todo
+        private ulong[] GenerateSubKeys(byte[] key)
         {
-            ulong aa = 0, bb = 0, i, j;
-            var b = key.Length;
-            var c = (ulong)(b / _mW);
+            ulong i, j;
+            var keyLength = key.Length;
+            var c = (ulong)(keyLength / _mW);//K length in words
             var l = new ulong[c];
-            Buffer.BlockCopy(key, 0, l, 0, b);
-            ulong t = (ulong) (2 * _numberOfRounds + 2);
-            var s = new ulong[t];
+            Buffer.BlockCopy(key, 0, l, 0, keyLength);
+            ulong subkeysCount = (ulong) (2 * _numberOfRounds + 2);//counts of subkeys
+            var s = new ulong[subkeysCount];//subleys
             s[0] = _mPw;
-            for (i = 1; i < t; i++)
+            for (i = 1; i < subkeysCount; i++)
                 s[i] = s[i - 1] + _mQw;
             i = j = 0;
-            for (ulong k = 0; k < 3 * Math.Max(t, c); k++)
+            ulong a = 0, b = 0;
+            for (ulong k = 0; k < 3 * Math.Max(subkeysCount, c); k++)
             {
-                aa = s[i] = RotateLeft(s[i] + aa + bb, 3);
-                bb = l[j] = RotateLeft(l[j] + aa + bb, (int)(aa + bb));
-                i = (i + 1) % t;
+                a = s[i] = RotateLeft(s[i] + a + b, 3);
+                b = l[j] = RotateLeft(l[j] + a + b, (int)(a + b));
+                i = (i + 1) % subkeysCount;
                 j = (j + 1) % c;
             }
             return s;
@@ -238,8 +227,7 @@ namespace lab3_rc5.model
 
         private byte _mW;
         private byte _numberOfRounds;// = 16;
-        private byte[] _mPasswordMd5;
-        private byte[] _mKey;//key in byte format
+        
 
     }
 }

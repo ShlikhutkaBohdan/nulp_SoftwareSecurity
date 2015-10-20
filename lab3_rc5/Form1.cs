@@ -16,7 +16,14 @@ namespace lab3_rc5
         public Form1()
         {
             InitializeComponent();
-            MyRc5W64 crypter = new MyRc5W64("password");
+            
+            string password = "a";
+            //crypter.
+            comboBox1.SelectedIndex = 2;
+            comboBox2.SelectedIndex = 2;
+            InputAlgoData();
+            //MyRc5 crypter = MyRc5.GetRc5(64, password, _keyLength, _numberOfRounds);
+            
             //myRc5.
         }
 
@@ -42,6 +49,7 @@ namespace lab3_rc5
 
         }
 
+
         private void button4_Click(object sender, EventArgs e)
         {
             SaveFileDialog openFileDialog1 = new SaveFileDialog();
@@ -58,6 +66,7 @@ namespace lab3_rc5
 
         private bool _mIsProcessRun = false;
 
+
         private async void button1_Click(object sender, EventArgs e)
         {//crypt
             if (_mIsProcessRun)
@@ -65,7 +74,7 @@ namespace lab3_rc5
                 MessageBox.Show("Process is run!");
                 return;
             }
-            _mIsProcessRun = true;
+            
             string plainFilePath = textBox1.Text;//source
             string cryptedFilePath = textBox2.Text;//dest
             string password = textBox3.Text;
@@ -77,11 +86,14 @@ namespace lab3_rc5
                     throw new Exception("Encrypted file path not inputed! Please output path");
                 if (password.Equals(""))
                     throw new Exception("Password not inputed! Please input password");
+                InputAlgoData();
                 await Task.Factory.StartNew(() =>
                 {
                     try
                     {
-                        MyRc5 crypter = MyRc5.GetRc5(_mKeyLength, password);
+                        
+                        _mIsProcessRun = true;
+                        MyRc5 crypter = MyRc5.GetRc5(_mWordLength, password, _keyLength, _numberOfRounds);
                         crypter.OnDecryptedPasswordFailed += CrypterOnOnDecryptedPasswordFailed;
                         crypter.OnProgressChanged += CrypterOnOnProgressChanged;
                         crypter.OnProcessEnded += CrypterOnOnProcessEnded;
@@ -97,6 +109,7 @@ namespace lab3_rc5
             }
             catch (Exception ex)
             {
+                _mIsProcessRun = false;
                 MessageBox.Show(ex.Message);
             }
         }
@@ -108,10 +121,13 @@ namespace lab3_rc5
 
         private void CrypterOnOnProgressChanged(int persents)
         {
-            progressBar1.Invoke((MethodInvoker) delegate
+            if (persents != progressBar1.Value)
             {
-                progressBar1.Value = persents;
-            });
+                progressBar1.Invoke((MethodInvoker) delegate
+                {
+                    progressBar1.Value = persents;
+                });
+            }
             //throw new NotImplementedException();
         }
 
@@ -121,7 +137,7 @@ namespace lab3_rc5
             MessageBox.Show("Password is wrong. Please input another password and try again!");
         }
 
-        private int _mKeyLength = 16;
+        private int _mWordLength = 64;
 
         private async void button2_Click(object sender, EventArgs e)
         {//decrypt
@@ -130,7 +146,7 @@ namespace lab3_rc5
                 MessageBox.Show("Process is run!");
                 return;
             }
-            _mIsProcessRun = true;
+            
             string cryptedFilePath = textBox1.Text;//source
             string plainFilePath = textBox2.Text;//dest
             string password = textBox3.Text;
@@ -142,12 +158,14 @@ namespace lab3_rc5
                     throw new Exception("Decrypted file path not inputed! Please input path");
                 if (password.Equals(""))
                     throw new Exception("Password not inputed! Please input password");
-
+                InputAlgoData();
                 await Task.Factory.StartNew(() =>
                 {
                     try
                     {
-                        MyRc5 crypter = MyRc5.GetRc5(_mKeyLength, password);
+                        _mIsProcessRun = true;
+                        
+                        MyRc5 crypter = MyRc5.GetRc5(_mWordLength, password, _keyLength, _numberOfRounds);
                         crypter.OnDecryptedPasswordFailed += CrypterOnOnDecryptedPasswordFailed;
                         crypter.OnProgressChanged += CrypterOnOnProgressChanged;
                         crypter.OnProcessEnded += CrypterOnOnProcessEnded;
@@ -157,6 +175,7 @@ namespace lab3_rc5
                     }
                     catch (Exception)
                     {
+                        _mIsProcessRun = false;
                         MessageBox.Show("Some error with Decription");
                     }
                 });
@@ -166,6 +185,40 @@ namespace lab3_rc5
             {
                 MessageBox.Show(ex.Message);
             }
+        }
+
+        private void groupBox1_Enter(object sender, EventArgs e)
+        {
+
+        }
+
+        private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private byte _numberOfRounds;
+        private int _keyLength;
+
+        private void InputAlgoData()
+        {
+            switch (comboBox1.SelectedIndex)
+            {
+                case 0:
+                    _mWordLength = 16;break;
+                case 1: _mWordLength = 32; break;
+                case 2: _mWordLength = 64; break;
+                default: _mWordLength = 64;break;
+            }
+            switch (comboBox2.SelectedIndex)
+            {
+                case 0:
+                    _keyLength = 8; break;
+                case 1: _keyLength = 16; break;
+                case 2: _keyLength = 32; break;
+                default: _keyLength = 16; break;
+            }
+            _numberOfRounds = (byte) numericUpDown1.Value;
         }
     }
 }
