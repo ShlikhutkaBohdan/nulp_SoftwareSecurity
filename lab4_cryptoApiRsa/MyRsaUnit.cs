@@ -14,75 +14,120 @@ namespace lab4_cryptoApiRsa
     {
         private const int KeyCryptFileDataLength = 64;
         private const int KeyDecryptFileDataLength = 128;
-        private readonly RSACryptoServiceProvider _rsaProvider = new RSACryptoServiceProvider(1024);
-        private long _rsaTime;
-        private long _symTime;
+        
+        public string InputFilePath { get; set; }
+        public string OutputFileFilePath { get; set; }
 
-        public bool SaveKeyPair(string pubFilePath, string privFilePath)
+        public bool GenerateKeyPair(string pubFilePath, string privFilePath)
         {
-            byte[] key = _rsaProvider.ExportCspBlob(false);
-            File.WriteAllBytes(pubFilePath, key);
-            key = _rsaProvider.ExportCspBlob(true);
-            File.WriteAllBytes(privFilePath, key);
+            try
+            {
+                using (RSACryptoServiceProvider rsaProvider = new RSACryptoServiceProvider(1024))
+                {
+                    byte[] key = rsaProvider.ExportCspBlob(false);
+                    File.WriteAllBytes(pubFilePath, key);
+                    key = rsaProvider.ExportCspBlob(true);
+                    File.WriteAllBytes(privFilePath, key);
+                }
+            }
+            catch (Exception)
+            {
+                return false;
+            }
             return false;
         }
 
-        public bool RsaCrypt(string infile, string outfile, string publicKeyFile, string privateKeyFile)
+        public bool Encrypt(byte[] publicKey)
         {
-            _rsaProvider.ImportCspBlob(File.ReadAllBytes(publicKeyFile));
-            _rsaProvider.ImportCspBlob(File.ReadAllBytes(privateKeyFile));
-            using (FileStream inStream = new FileStream(infile, FileMode.Open), outStream = new FileStream(outfile, FileMode.Create))
+            try
             {
-                var bytes = new byte[KeyCryptFileDataLength];
-                int readBytes = KeyCryptFileDataLength;
-                byte[] realReadBytes = null;
-                byte offset = 0;
-                byte[] cryptBytes;
-                while (readBytes == KeyCryptFileDataLength) {
-                    readBytes = inStream.Read(bytes, 0, KeyCryptFileDataLength);
-                    realReadBytes = bytes;
-                    if (readBytes == 0) break;
-                    if (readBytes < KeyCryptFileDataLength)
+                using (RSACryptoServiceProvider rsaProvider = new RSACryptoServiceProvider(1024))
+                {
+                    rsaProvider.ImportCspBlob(publicKey);
+                    using (
+                        FileStream inStream = new FileStream(InputFilePath, FileMode.Open),
+                            outStream = new FileStream(OutputFileFilePath, FileMode.Create))
                     {
-                        offset = (byte) readBytes;
+                        EncryptData(rsaProvider, inStream, outStream);
+                        inStream.Close();
+                        outStream.Close();
                     }
-                    cryptBytes = _rsaProvider.Encrypt(realReadBytes, false);
-                    outStream.Write(cryptBytes, 0, cryptBytes.Length);
                 }
-                realReadBytes[0] = offset;
-                cryptBytes = _rsaProvider.Encrypt(realReadBytes, false);
-                outStream.Write(cryptBytes, 0, cryptBytes.Length);
+            }
+            catch (Exception)
+            {
+                return false;
             }
             return true;
         }
 
-        public bool RsaDecrypt(string infile, string outfile, string publicKeyFile, string privateKeyFile)
+        private void EncryptData(RSACryptoServiceProvider provider, Stream inStream, Stream outStream)
         {
-            _rsaProvider.ImportCspBlob(File.ReadAllBytes(publicKeyFile));
-            _rsaProvider.ImportCspBlob(File.ReadAllBytes(privateKeyFile));
-            using (FileStream inStream = new FileStream(infile, FileMode.Open), outStream = new FileStream(outfile, FileMode.Create))
+            var bytes = new byte[KeyCryptFileDataLength];
+            int readBytes = KeyCryptFileDataLength;
+            byte[] realReadBytes = null;
+            byte offset = 0;
+            byte[] cryptBytes;
+            while (readBytes == KeyCryptFileDataLength)
             {
-                var bytes = new byte[KeyDecryptFileDataLength];
-                int readBytes = KeyDecryptFileDataLength;
-
-                inStream.Position = inStream.Length - KeyDecryptFileDataLength;
-                readBytes = inStream.Read(bytes, 0, KeyDecryptFileDataLength);
-                byte[] cryptBytes = _rsaProvider.Decrypt(bytes, false);
-                byte offset = cryptBytes[0];//length of padding
-
-                inStream.Position = 0;
-                while (inStream.Position < inStream.Length - KeyDecryptFileDataLength)
+                readBytes = inStream.Read(bytes, 0, KeyCryptFileDataLength);
+                realReadBytes = bytes;
+                if (readBytes == 0) break;
+                if (readBytes < KeyCryptFileDataLength)
                 {
-                    readBytes = inStream.Read(bytes, 0, KeyDecryptFileDataLength);
-                    if (readBytes == 0) break;
-                     cryptBytes = _rsaProvider.Decrypt(bytes, false);
-                    int length = cryptBytes.Length;
-                    if (inStream.Position >= inStream.Length - KeyDecryptFileDataLength)
-                        length = offset;
-                    outStream.Write(cryptBytes, 0, length);
+                    offset = (byte)readBytes;
+                }
+                cryptBytes = provider.Encrypt(realReadBytes, false);
+                outStream.Write(cryptBytes, 0, cryptBytes.Length);
+            }
+            realReadBytes[0] = offset;
+            cryptBytes = provider.Encrypt(realReadBytes, false);
+            outStream.Write(cryptBytes, 0, cryptBytes.Length);
+        }
+
+        public bool Decrypt(byte[] privateKey)
+        {
+            try
+            {
+                using (RSACryptoServiceProvider rsaProvider = new RSACryptoServiceProvider(1024))
+                {
+                    rsaProvider.ImportCspBlob(privateKey);
+                    using (
+                        FileStream inStream = new FileStream(InputFilePath, FileMode.Open),
+                            outStream = new FileStream(OutputFileFilePath, FileMode.Create))
+                    {
+                        DecryptData(rsaProvider, inStream, outStream);
+                        inStream.Close();
+                        outStream.Close();
+                    }
                 }
             }
+            catch (Exception)
+            {
+                return false;
+            }
             return true;
+        }
+
+        private void DecryptData(RSACryptoServiceProvider provider, Stream inStream, Stream outStream)
+        {
+            var bytes = new byte[KeyDecryptFileDataLength];
+            int readBytes = KeyDecryptFileDataLength;
+            inStream.Position = inStream.Length - KeyDecryptFileDataLength;
+            readBytes = inStream.Read(bytes, 0, KeyDecryptFileDataLength);
+            byte[] cryptBytes = provider.Decrypt(bytes, false);
+            byte offset = cryptBytes[0]; //length of padding
+            inStream.Position = 0;
+            while (inStream.Position < inStream.Length - KeyDecryptFileDataLength)
+            {
+                readBytes = inStream.Read(bytes, 0, KeyDecryptFileDataLength);
+                if (readBytes == 0) break;
+                cryptBytes = provider.Decrypt(bytes, false);
+                int length = cryptBytes.Length;
+                if (inStream.Position >= inStream.Length - KeyDecryptFileDataLength)
+                    length = offset;
+                outStream.Write(cryptBytes, 0, length);
+            }
         }
 
 

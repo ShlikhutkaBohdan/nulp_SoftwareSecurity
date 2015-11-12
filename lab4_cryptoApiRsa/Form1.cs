@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
@@ -53,7 +54,7 @@ namespace lab4_cryptoApiRsa
                         publicKeyFileName = saveDialog2.FileName;
                         using (var myRsaUnit = new MyRsaUnit())// for deletting all data after creating key pair
                         {
-                            if (myRsaUnit.SaveKeyPair(publicKeyFileName, privatKeyFileName))
+                            if (myRsaUnit.GenerateKeyPair(publicKeyFileName, privatKeyFileName))
                             {
                                 //_myRsaUnit
                                 MessageBox.Show("Пара ключів успішно створені!");
@@ -125,7 +126,6 @@ namespace lab4_cryptoApiRsa
             string sourceFileName = textBox1.Text;
             string destFileName = textBox2.Text;
             string publicKeyName = textBox4.Text;
-            string privateKeyName = textBox5.Text;
             try
             {
                 if (sourceFileName.Equals(""))
@@ -136,8 +136,9 @@ namespace lab4_cryptoApiRsa
                     throw new Exception("Виберіть пубілчний ключ шифрування");
                 using (var myRsaUnit = new MyRsaUnit()) // for deletting all data
                 {
-
-                    if (myRsaUnit.RsaCrypt(sourceFileName, destFileName, publicKeyName, privateKeyName))
+                    myRsaUnit.InputFilePath = sourceFileName;
+                    myRsaUnit.OutputFileFilePath = destFileName;
+                    if (myRsaUnit.Encrypt(File.ReadAllBytes(publicKeyName)))
                             MessageBox.Show("Файл успішно зашифровано!");
                         else
                             throw new Exception("Помилка шифрування");
@@ -153,7 +154,6 @@ namespace lab4_cryptoApiRsa
         {
             string sourceFileName = textBox1.Text;
             string destFileName = textBox2.Text;
-            string publicKeyName = textBox4.Text;
             string privateKeyName = textBox5.Text;
             try
             {
@@ -165,7 +165,9 @@ namespace lab4_cryptoApiRsa
                     throw new Exception("Виберіть приватний ключ дешифрування");
                 using (var myRsaUnit = new MyRsaUnit()) // for deletting all data
                 {
-                    if (myRsaUnit.RsaDecrypt(sourceFileName, destFileName, publicKeyName, privateKeyName))
+                    myRsaUnit.InputFilePath = sourceFileName;
+                    myRsaUnit.OutputFileFilePath = destFileName;
+                    if (myRsaUnit.Decrypt(File.ReadAllBytes(privateKeyName)))//read public key
                             MessageBox.Show("Файл успішно дешифровано!");
                         else
                             throw new Exception("Помилка дешифрування");
