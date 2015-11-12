@@ -151,12 +151,21 @@ namespace lab4_cryptoApiRsa
                         myRsaUnit.InputFilePath = sourceFileName;
                         myRsaUnit.OutputFileFilePath = destFileName;
                         myRsaUnit.OnProgresChange += MyRsaUnitOnOnProgresChange;
-                        if (myRsaUnit.Encrypt(File.ReadAllBytes(publicKeyName)))
+                        try
+                        {
+                            myRsaUnit.Encrypt(File.ReadAllBytes(publicKeyName));
+                            label2.Invoke((MethodInvoker)delegate
+                            {
+                                label2.Text = String.Format("rsa time = {0}ms",
+                                    sw.ElapsedMilliseconds);
+                            });
                             MessageBox.Show("Файл успішно зашифровано!");
-                        else
-                            throw new Exception("Помилка шифрування");
+                        }
+                        catch (Exception)
+                        {
+                            MessageBox.Show("Помилка шифрування");
+                        }
                         sw.Stop();
-                        label2.Text = String.Format("rsa time = {0}ms", sw.ElapsedMilliseconds);
                     }
                     _isProcessRun = false;
                 });
@@ -169,11 +178,15 @@ namespace lab4_cryptoApiRsa
 
         private void MyRsaUnitOnOnProgresChange(int persents)
         {
-            //progress invoke
-            progressBar1.Invoke((MethodInvoker)delegate
+            if (persents%5 == 0)
             {
-                progressBar1.Value = persents;
-            });
+                //progress invoke
+                progressBar1.Invoke((MethodInvoker) delegate
+                {
+
+                    progressBar1.Value = persents;
+                });
+            }
         }
 
         private bool _isProcessRun;
@@ -201,10 +214,15 @@ namespace lab4_cryptoApiRsa
                     myRsaUnit.InputFilePath = sourceFileName;
                     myRsaUnit.OutputFileFilePath = destFileName;
                     myRsaUnit.OnProgresChange += MyRsaUnitOnOnProgresChange;
-                    if (myRsaUnit.Decrypt(File.ReadAllBytes(privateKeyName)))//read public key
-                            MessageBox.Show("Файл успішно дешифровано!");
-                        else
-                            throw new Exception("Помилка дешифрування");
+                    try
+                    {
+                        myRsaUnit.Decrypt(File.ReadAllBytes(privateKeyName));
+                        MessageBox.Show("Файл успішно дешифровано!");
+                    }
+                    catch (Exception)
+                    {
+                        MessageBox.Show("Помилка дешифрування");
+                    }
                 }
             }
             catch (Exception ex)
@@ -278,9 +296,13 @@ namespace lab4_cryptoApiRsa
                         crypter.OnProcessEnded += CrypterOnOnProcessEnded;
                         crypter.Encrypt(plainFilePath, cryptedFilePath);
                         _isProcessRun = false;
-                        MessageBox.Show("Encryption complete");
                         sw.Stop();
-                        label1.Text = String.Format("rsa time = {0}ms", sw.ElapsedMilliseconds);
+                        label1.Invoke((MethodInvoker)delegate
+                        {
+                            label1.Text = String.Format("rc5 time = {0}ms",
+                                sw.ElapsedMilliseconds);
+                        });
+                        MessageBox.Show("Encryption complete");
                     }
                     catch (Exception)
                     {
@@ -303,15 +325,18 @@ namespace lab4_cryptoApiRsa
 
         private void CrypterOnOnProgressChanged(int persents)
         {
-            progressBar1.Invoke((MethodInvoker) delegate
+            if (persents%5 == 0)
             {
-                progressBar1.Value = persents;
-            });
+                progressBar1.Invoke((MethodInvoker) delegate
+                {
+                    progressBar1.Value = persents;
+                });
+            }
         }
 
         private void CrypterOnOnProcessEnded()
         {
-            MessageBox.Show("Proces ended");
+            //MessageBox.Show("Proces ended");
         }
 
         private async void button8_Click(object sender, EventArgs e)

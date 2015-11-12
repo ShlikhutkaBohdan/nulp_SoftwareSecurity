@@ -86,7 +86,7 @@ namespace lab4_cryptoApiRsa
 
                 if (OnProgresChange != null)
                 {
-                    OnProgresChange((int)(inStream.Position / (double)inStream.Length) * 100);
+                    OnProgresChange((int)(inStream.Position / (double)inStream.Length * 100));
                 }
             }
             realReadBytes[0] = offset;
@@ -139,7 +139,7 @@ namespace lab4_cryptoApiRsa
 
                 if (OnProgresChange != null)
                 {
-                    OnProgresChange((int)(inStream.Position / (double)inStream.Length) * 100);
+                    OnProgresChange((int)(inStream.Position / (double)inStream.Length * 100));
                 }
             }
         }
