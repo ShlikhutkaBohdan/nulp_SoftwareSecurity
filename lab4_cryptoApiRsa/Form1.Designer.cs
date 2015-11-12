@@ -33,8 +33,6 @@
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.button2 = new System.Windows.Forms.Button();
             this.progressBar1 = new System.Windows.Forms.ProgressBar();
-            this.label1 = new System.Windows.Forms.Label();
-            this.tbPassword = new System.Windows.Forms.TextBox();
             this.button4 = new System.Windows.Forms.Button();
             this.button3 = new System.Windows.Forms.Button();
             this.textBox2 = new System.Windows.Forms.TextBox();
@@ -97,25 +95,6 @@
             this.progressBar1.Name = "progressBar1";
             this.progressBar1.Size = new System.Drawing.Size(456, 23);
             this.progressBar1.TabIndex = 24;
-            // 
-            // label1
-            // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(8, 26);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(53, 13);
-            this.label1.TabIndex = 22;
-            this.label1.Text = "Password";
-            this.label1.Click += new System.EventHandler(this.label1_Click);
-            // 
-            // tbPassword
-            // 
-            this.tbPassword.Location = new System.Drawing.Point(67, 24);
-            this.tbPassword.Name = "tbPassword";
-            this.tbPassword.Size = new System.Drawing.Size(372, 20);
-            this.tbPassword.TabIndex = 21;
-            this.tbPassword.Text = "admin";
-            this.tbPassword.TextChanged += new System.EventHandler(this.textBox3_TextChanged);
             // 
             // button4
             // 
@@ -187,11 +166,9 @@
             // groupBox2
             // 
             this.groupBox2.Controls.Add(this.button7);
-            this.groupBox2.Controls.Add(this.tbPassword);
-            this.groupBox2.Controls.Add(this.label1);
             this.groupBox2.Location = new System.Drawing.Point(4, 118);
             this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(456, 113);
+            this.groupBox2.Size = new System.Drawing.Size(456, 60);
             this.groupBox2.TabIndex = 35;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Генерація пари ключів (public key, private key)";
@@ -199,7 +176,7 @@
             // button7
             // 
             this.button7.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.button7.Location = new System.Drawing.Point(23, 64);
+            this.button7.Location = new System.Drawing.Point(23, 19);
             this.button7.Name = "button7";
             this.button7.Size = new System.Drawing.Size(416, 36);
             this.button7.TabIndex = 23;
@@ -239,7 +216,6 @@
             this.Text = "rsa cryptoAPI (Bohdan Shlikhutka)";
             this.groupBox1.ResumeLayout(false);
             this.groupBox2.ResumeLayout(false);
-            this.groupBox2.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -251,8 +227,6 @@
         private System.Windows.Forms.Button button1;
         private System.Windows.Forms.GroupBox groupBox1;
         private System.Windows.Forms.ProgressBar progressBar1;
-        private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.TextBox tbPassword;
         private System.Windows.Forms.Button button4;
         private System.Windows.Forms.Button button3;
         private System.Windows.Forms.TextBox textBox2;

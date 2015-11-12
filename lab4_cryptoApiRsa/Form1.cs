@@ -32,9 +32,7 @@ namespace lab4_cryptoApiRsa
 
         private void button7_Click(object sender, EventArgs e)//generate keys pair
         {
-            if (tbPassword.Text != "")
-            {
-                string password = tbPassword.Text;
+            
                 var saveDialog1 = new SaveFileDialog();
                 saveDialog1.Filter = "private key (*.epr)|*.epr";
                 saveDialog1.FilterIndex = 2;
@@ -55,7 +53,7 @@ namespace lab4_cryptoApiRsa
                         publicKeyFileName = saveDialog2.FileName;
                         using (var myRsaUnit = new MyRsaUnit())// for deletting all data after creating key pair
                         {
-                            if (myRsaUnit.GenerateKeyPair(privatKeyFileName, publicKeyFileName, password))
+                            if (myRsaUnit.SaveKeyPair(publicKeyFileName, privatKeyFileName))
                             {
                                 //_myRsaUnit
                                 MessageBox.Show("Пара ключів успішно створені!");
@@ -63,11 +61,6 @@ namespace lab4_cryptoApiRsa
                         }
                     }
                 }
-            }
-            else
-            {
-                MessageBox.Show("Введіть пароль, будь ласка.");
-            }
         }
 
 
@@ -132,6 +125,7 @@ namespace lab4_cryptoApiRsa
             string sourceFileName = textBox1.Text;
             string destFileName = textBox2.Text;
             string publicKeyName = textBox4.Text;
+            string privateKeyName = textBox5.Text;
             try
             {
                 if (sourceFileName.Equals(""))
@@ -142,17 +136,11 @@ namespace lab4_cryptoApiRsa
                     throw new Exception("Виберіть пубілчний ключ шифрування");
                 using (var myRsaUnit = new MyRsaUnit()) // for deletting all data
                 {
-                    if (myRsaUnit.GetPublicKey(publicKeyName))
-                    {
-                        if (myRsaUnit.EncryptRsa(sourceFileName, destFileName))
+
+                    if (myRsaUnit.RsaCrypt(sourceFileName, destFileName, publicKeyName, privateKeyName))
                             MessageBox.Show("Файл успішно зашифровано!");
                         else
                             throw new Exception("Помилка шифрування");
-                    }
-                    else
-                    {
-                        throw new Exception("Помилка отримання публічног ключа");
-                    }
                 }
             }
             catch (Exception ex)
@@ -165,8 +153,8 @@ namespace lab4_cryptoApiRsa
         {
             string sourceFileName = textBox1.Text;
             string destFileName = textBox2.Text;
+            string publicKeyName = textBox4.Text;
             string privateKeyName = textBox5.Text;
-            string password = tbPassword.Text;
             try
             {
                 if (sourceFileName.Equals(""))
@@ -175,21 +163,12 @@ namespace lab4_cryptoApiRsa
                     throw new Exception("Виберіть файл дегифрування");
                 if (privateKeyName.Equals(""))
                     throw new Exception("Виберіть приватний ключ дешифрування");
-                if (password.Equals(""))
-                    throw new Exception("Введіть пароль");
                 using (var myRsaUnit = new MyRsaUnit()) // for deletting all data
                 {
-                    if (myRsaUnit.GetPrivateKey(privateKeyName, password))
-                    {
-                        if (myRsaUnit.DecryptRsa(sourceFileName, destFileName))
+                    if (myRsaUnit.RsaDecrypt(sourceFileName, destFileName, publicKeyName, privateKeyName))
                             MessageBox.Show("Файл успішно дешифровано!");
                         else
                             throw new Exception("Помилка дешифрування");
-                    }
-                    else
-                    {
-                        throw new Exception("Помилка отримання приватного ключа");
-                    }
                 }
             }
             catch (Exception ex)

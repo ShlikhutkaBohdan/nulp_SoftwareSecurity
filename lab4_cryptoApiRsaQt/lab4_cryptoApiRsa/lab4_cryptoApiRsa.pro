@@ -16,9 +16,11 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    mycryptoapi.cpp
+    mycryptoapi.cpp \
+    entrypter_demo.cpp
 
 HEADERS  += mainwindow.h \
-    mycryptoapi.h
+    mycryptoapi.h \
+    encrypter_demo.h
 
 FORMS    += mainwindow.ui
