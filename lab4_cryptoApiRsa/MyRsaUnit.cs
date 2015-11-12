@@ -12,6 +12,10 @@ namespace lab4_cryptoApiRsa
 {
     public class MyRsaUnit: IDisposable
     {
+        public delegate void ProgresChangeEvent(int persents);
+
+        public event ProgresChangeEvent OnProgresChange;
+
         private const int KeyCryptFileDataLength = 64;
         private const int KeyDecryptFileDataLength = 128;
         
@@ -79,6 +83,11 @@ namespace lab4_cryptoApiRsa
                 }
                 cryptBytes = provider.Encrypt(realReadBytes, false);
                 outStream.Write(cryptBytes, 0, cryptBytes.Length);
+
+                if (OnProgresChange != null)
+                {
+                    OnProgresChange((int)(inStream.Position / (double)inStream.Length) * 100);
+                }
             }
             realReadBytes[0] = offset;
             cryptBytes = provider.Encrypt(realReadBytes, false);
@@ -127,6 +136,11 @@ namespace lab4_cryptoApiRsa
                 if (inStream.Position >= inStream.Length - KeyDecryptFileDataLength)
                     length = offset;
                 outStream.Write(cryptBytes, 0, length);
+
+                if (OnProgresChange != null)
+                {
+                    OnProgresChange((int)(inStream.Position / (double)inStream.Length) * 100);
+                }
             }
         }
 
