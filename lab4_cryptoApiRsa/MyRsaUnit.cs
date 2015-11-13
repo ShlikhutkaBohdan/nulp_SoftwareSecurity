@@ -18,20 +18,21 @@ namespace lab4_cryptoApiRsa
 
         private const int KeyCryptFileDataLength = 64;
         private const int KeyDecryptFileDataLength = 128;
+        private const int KeySize = 1024;
         
         public string InputFilePath { get; set; }
         public string OutputFileFilePath { get; set; }
 
-        public bool GenerateKeyPair(string pubFilePath, string privFilePath)
+        public bool GenerateKeyPair(string publicKeyFilePath, string privateKeyFilePath)
         {
             try
             {
-                using (RSACryptoServiceProvider rsaProvider = new RSACryptoServiceProvider(1024))
+                using (RSACryptoServiceProvider rsaProvider = new RSACryptoServiceProvider(KeySize))
                 {
-                    byte[] key = rsaProvider.ExportCspBlob(false);
-                    File.WriteAllBytes(pubFilePath, key);
-                    key = rsaProvider.ExportCspBlob(true);
-                    File.WriteAllBytes(privFilePath, key);
+                    byte[] keyData = rsaProvider.ExportCspBlob(false);//generate public key
+                    File.WriteAllBytes(publicKeyFilePath, keyData);
+                    keyData = rsaProvider.ExportCspBlob(true);//generate private key
+                    File.WriteAllBytes(privateKeyFilePath, keyData);
                 }
             }
             catch (Exception)
@@ -45,16 +46,16 @@ namespace lab4_cryptoApiRsa
         {
             try
             {
-                using (RSACryptoServiceProvider rsaProvider = new RSACryptoServiceProvider(1024))
+                using (RSACryptoServiceProvider rsaProvider = new RSACryptoServiceProvider(KeySize))
                 {
                     rsaProvider.ImportCspBlob(publicKey);
                     using (
-                        FileStream inStream = new FileStream(InputFilePath, FileMode.Open),
-                            outStream = new FileStream(OutputFileFilePath, FileMode.Create))
+                        FileStream plainMessageStream = new FileStream(InputFilePath, FileMode.Open),
+                            encryptedMessageStream = new FileStream(OutputFileFilePath, FileMode.Create))
                     {
-                        EncryptData(rsaProvider, inStream, outStream);
-                        inStream.Close();
-                        outStream.Close();
+                        EncryptData(rsaProvider, plainMessageStream, encryptedMessageStream);
+                        plainMessageStream.Close();
+                        encryptedMessageStream.Close();
                     }
                 }
             }
@@ -65,49 +66,47 @@ namespace lab4_cryptoApiRsa
             return true;
         }
 
-        private void EncryptData(RSACryptoServiceProvider provider, Stream inStream, Stream outStream)
+        private void EncryptData(RSACryptoServiceProvider provider, Stream plainMessage, Stream encryptedMessage)
         {
-            var bytes = new byte[KeyCryptFileDataLength];
-            int readBytes = KeyCryptFileDataLength;
-            byte[] realReadBytes = null;
-            byte offset = 0;
-            byte[] cryptBytes;
-            while (readBytes == KeyCryptFileDataLength)
+            var bytesBuffer = new byte[KeyCryptFileDataLength];
+            int readedBytesCount = KeyCryptFileDataLength;
+            byte offset = 0;//for last block
+            byte[] encryptedBytesBuffer;
+            while (readedBytesCount == KeyCryptFileDataLength)
             {
-                readBytes = inStream.Read(bytes, 0, KeyCryptFileDataLength);
-                realReadBytes = bytes;
-                if (readBytes == 0) break;
-                if (readBytes < KeyCryptFileDataLength)
+                readedBytesCount = plainMessage.Read(bytesBuffer, 0, KeyCryptFileDataLength);
+                if (readedBytesCount == 0) break;
+                if (readedBytesCount < KeyCryptFileDataLength)
                 {
-                    offset = (byte)readBytes;
+                    offset = (byte)readedBytesCount;
                 }
-                cryptBytes = provider.Encrypt(realReadBytes, false);
-                outStream.Write(cryptBytes, 0, cryptBytes.Length);
+                encryptedBytesBuffer = provider.Encrypt(bytesBuffer, false);
+                encryptedMessage.Write(encryptedBytesBuffer, 0, encryptedBytesBuffer.Length);
 
-                if (OnProgresChange != null)
+                if (OnProgresChange != null)//firing event of changing progress
                 {
-                    OnProgresChange((int)(inStream.Position / (double)inStream.Length * 100));
+                    OnProgresChange((int)(plainMessage.Position / (double)plainMessage.Length * 100));
                 }
             }
-            realReadBytes[0] = offset;
-            cryptBytes = provider.Encrypt(realReadBytes, false);
-            outStream.Write(cryptBytes, 0, cryptBytes.Length);
+            bytesBuffer[0] = offset;//write a length of last block
+            encryptedBytesBuffer = provider.Encrypt(bytesBuffer, false);
+            encryptedMessage.Write(encryptedBytesBuffer, 0, encryptedBytesBuffer.Length);
         }
 
         public bool Decrypt(byte[] privateKey)
         {
             try
             {
-                using (RSACryptoServiceProvider rsaProvider = new RSACryptoServiceProvider(1024))
+                using (RSACryptoServiceProvider rsaProvider = new RSACryptoServiceProvider(KeySize))
                 {
                     rsaProvider.ImportCspBlob(privateKey);
                     using (
-                        FileStream inStream = new FileStream(InputFilePath, FileMode.Open),
-                            outStream = new FileStream(OutputFileFilePath, FileMode.Create))
+                        FileStream encryptedMessageStream = new FileStream(InputFilePath, FileMode.Open),
+                            decryptedMessageStream = new FileStream(OutputFileFilePath, FileMode.Create))
                     {
-                        DecryptData(rsaProvider, inStream, outStream);
-                        inStream.Close();
-                        outStream.Close();
+                        DecryptData(rsaProvider, encryptedMessageStream, decryptedMessageStream);
+                        encryptedMessageStream.Close();
+                        decryptedMessageStream.Close();
                     }
                 }
             }
@@ -118,28 +117,28 @@ namespace lab4_cryptoApiRsa
             return true;
         }
 
-        private void DecryptData(RSACryptoServiceProvider provider, Stream inStream, Stream outStream)
+        private void DecryptData(RSACryptoServiceProvider provider, Stream encryptedMessage, Stream decryptedMessage)
         {
-            var bytes = new byte[KeyDecryptFileDataLength];
-            int readBytes = KeyDecryptFileDataLength;
-            inStream.Position = inStream.Length - KeyDecryptFileDataLength;
-            readBytes = inStream.Read(bytes, 0, KeyDecryptFileDataLength);
-            byte[] cryptBytes = provider.Decrypt(bytes, false);
-            byte offset = cryptBytes[0]; //length of padding
-            inStream.Position = 0;
-            while (inStream.Position < inStream.Length - KeyDecryptFileDataLength)
+            var bytesBuffer = new byte[KeyDecryptFileDataLength];
+            int readedBytesCount = KeyDecryptFileDataLength;
+            encryptedMessage.Position = encryptedMessage.Length - KeyDecryptFileDataLength;
+            readedBytesCount = encryptedMessage.Read(bytesBuffer, 0, KeyDecryptFileDataLength);
+            byte[] decryptedBytesBuffer = provider.Decrypt(bytesBuffer, false);
+            byte offset = decryptedBytesBuffer[0]; //length of padding
+            encryptedMessage.Position = 0;//move to start of stream
+            while (encryptedMessage.Position < encryptedMessage.Length - KeyDecryptFileDataLength)
             {
-                readBytes = inStream.Read(bytes, 0, KeyDecryptFileDataLength);
-                if (readBytes == 0) break;
-                cryptBytes = provider.Decrypt(bytes, false);
-                int length = cryptBytes.Length;
-                if (inStream.Position >= inStream.Length - KeyDecryptFileDataLength)
+                readedBytesCount = encryptedMessage.Read(bytesBuffer, 0, KeyDecryptFileDataLength);
+                if (readedBytesCount == 0) break;
+                decryptedBytesBuffer = provider.Decrypt(bytesBuffer, false);
+                int length = decryptedBytesBuffer.Length;
+                if (encryptedMessage.Position >= encryptedMessage.Length - KeyDecryptFileDataLength)//position on the last block (additional)
                     length = offset;
-                outStream.Write(cryptBytes, 0, length);
+                decryptedMessage.Write(decryptedBytesBuffer, 0, length);
 
                 if (OnProgresChange != null)
                 {
-                    OnProgresChange((int)(inStream.Position / (double)inStream.Length * 100));
+                    OnProgresChange((int)(encryptedMessage.Position / (double)encryptedMessage.Length * 100));
                 }
             }
         }
