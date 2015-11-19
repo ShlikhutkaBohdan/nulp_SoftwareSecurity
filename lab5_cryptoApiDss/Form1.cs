@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using lab5_cryptoApiDss.DsaApi;
 
 namespace lab5_cryptoApiDss
 {
@@ -17,7 +19,7 @@ namespace lab5_cryptoApiDss
             InitializeComponent();
         }
 
-        string SaveFilePath(string title, string filter)
+        private string SaveFilePath(string title, string filter)
         {
             var saveDialog2 = new SaveFileDialog();
             saveDialog2.Filter = filter;//"public key (*.epb)|*.epb";
@@ -51,7 +53,7 @@ namespace lab5_cryptoApiDss
             tbDsapub.Text = dsaPub;
             tbDsapriv.Text = dsaPriv;
 
-            DsaApi.KeyFactory keyFactory = new DsaApi.KeyFactory();
+            KeyFactory keyFactory = new KeyFactory();
             keyFactory.RsaPublicKeyPath = rsaPub;
             keyFactory.RsaPrivateKeyPath = rsaPriv;
             keyFactory.DsaPublicKeyPath = dsaPub;
@@ -67,7 +69,7 @@ namespace lab5_cryptoApiDss
             }
         }
 
-        string OpenFilePath(string title,string filter)
+        private string OpenFilePath(string title,string filter)
         {
             OpenFileDialog openFileDialog1 = new OpenFileDialog();
             openFileDialog1.Filter = filter;
@@ -109,6 +111,109 @@ namespace lab5_cryptoApiDss
             string s = OpenFilePath("Публічний ключ DSA", "dsapub files (*.dsapub)|*.dsapub");
             if (s != null)
                 tbDsapub.Text = s;
+        }
+
+
+        private KeyFactory LoadKeys()
+        {
+            string rsaPub = tbRsapub.Text;
+            if (rsaPub.Equals(""))
+                return null;
+            string rsaPriv = tbRsapriv.Text;
+            if (rsaPriv.Equals(""))
+                return null;
+            string dsaPub = tbDsapub.Text;
+            if (dsaPub.Equals(""))
+                return null;
+            string dsaPriv = tbDsapriv.Text;
+            if (dsaPriv.Equals(""))
+                return null;
+
+            KeyFactory keyFactory = new KeyFactory();
+            keyFactory.RsaPublicKeyPath = rsaPub;
+            keyFactory.RsaPrivateKeyPath = rsaPriv;
+            keyFactory.DsaPublicKeyPath = dsaPub;
+            keyFactory.DsaPrivateKeyPath = dsaPriv;
+            if (!keyFactory.LoadKeysPairs())
+                return null;
+
+            return keyFactory;
+        }
+
+        private bool CreateDigitalSignatureForText(string text)
+        {
+            KeyFactory keyFactory = LoadKeys();
+            if (keyFactory == null)
+                return false;
+            using (var ins = (new MemoryStream(Encoding.UTF8.GetBytes(text))))
+            {
+                string filePath = SaveFilePath("Збереження в файл", "");
+                if (filePath == null)
+                    return false;
+                string signFilePath = SaveFilePath("Збереження підпису", "signature files (*.sign)|*.sign");
+                if (signFilePath == null)
+                    return false;
+
+                DsaSignatureCreatorApi dsaSignatureCreatorApi = new DsaSignatureCreatorApi();
+                dsaSignatureCreatorApi.Keys = keyFactory;
+                dsaSignatureCreatorApi.SaveFilePath = filePath;
+                dsaSignatureCreatorApi.SignatureFilePath = signFilePath;
+                if (!dsaSignatureCreatorApi.CreateSignature(ins))
+                    return false;
+                
+            }
+
+            return true;
+        }
+
+        private void button6_Click(object sender, EventArgs e)
+        {
+            string text = tbPlaintext.Text;
+            if (CreateDigitalSignatureForText(text))
+            {
+                MessageBox.Show("Success");
+            }
+            else
+            {
+                MessageBox.Show("error");
+            }
+        }
+
+        private bool CheckTextSignature()
+        {
+            string encryptedFilePath = OpenFilePath("Зашифрований файл", "");
+            if (encryptedFilePath == null)
+                return false;
+            string signatureFilePath = OpenFilePath("Файл підпису", "signature files (*.sign)|*.sign");
+            if (signatureFilePath == null)
+                return false;
+            string saveFilePath = SaveFilePath("Зберегти", "");
+            if (saveFilePath == null)
+                return false;
+
+            KeyFactory keyFactory = LoadKeys();
+            if (keyFactory == null)
+                return false;
+
+            using (var dsaSignatureChecker = new DsaSignatureCheckerApi())
+            {
+                dsaSignatureChecker.EncryptedFilePath = encryptedFilePath;
+                dsaSignatureChecker.SignatureFilePath = signatureFilePath;
+                dsaSignatureChecker.SaveFilePath = saveFilePath;
+                dsaSignatureChecker.Keys = keyFactory;
+
+                if (!dsaSignatureChecker.Process())
+                    return false;
+
+                textBox1.Text = dsaSignatureChecker.ResultOutput;
+            }
+            return true;
+        }
+
+        private void button7_Click(object sender, EventArgs e)
+        {
+            if (!CheckTextSignature())
+                MessageBox.Show("error");
         }
     }
 }
