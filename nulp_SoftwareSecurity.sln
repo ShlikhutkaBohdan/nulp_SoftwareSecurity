@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "lab3_rc5", "lab3_rc5\lab3_r
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "lab4_cryptoApiRsa", "lab4_cryptoApiRsa\lab4_cryptoApiRsa.csproj", "{2592497C-84D3-4F10-B8B6-54FD8DD0BD78}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "lab5_cryptoApiDss", "lab5_cryptoApiDss\lab5_cryptoApiDss.csproj", "{5A829A2E-B83F-40DA-AC00-7D39A3916713}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{2592497C-84D3-4F10-B8B6-54FD8DD0BD78}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2592497C-84D3-4F10-B8B6-54FD8DD0BD78}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2592497C-84D3-4F10-B8B6-54FD8DD0BD78}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5A829A2E-B83F-40DA-AC00-7D39A3916713}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5A829A2E-B83F-40DA-AC00-7D39A3916713}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5A829A2E-B83F-40DA-AC00-7D39A3916713}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5A829A2E-B83F-40DA-AC00-7D39A3916713}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

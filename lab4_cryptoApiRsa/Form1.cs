@@ -191,7 +191,7 @@ namespace lab4_cryptoApiRsa
 
         private bool _isProcessRun;
 
-        private void button2_Click(object sender, EventArgs e)
+        private async void button2_Click(object sender, EventArgs e)
         {
             if (_isProcessRun)
             {
@@ -209,21 +209,35 @@ namespace lab4_cryptoApiRsa
                     throw new Exception("Виберіть файл дешифрування");
                 if (privateKeyName.Equals(""))
                     throw new Exception("Виберіть приватний ключ дешифрування");
-                using (var myRsaUnit = new MyRsaUnit()) // for deletting all data
+                await Task.Factory.StartNew(() =>
                 {
-                    myRsaUnit.InputFilePath = sourceFileName;
-                    myRsaUnit.OutputFileFilePath = destFileName;
-                    myRsaUnit.OnProgresChange += MyRsaUnitOnOnProgresChange;
-                    try
+                    _isProcessRun = true;
+                    using (var myRsaUnit = new MyRsaUnit()) // for deletting all data
                     {
-                        myRsaUnit.Decrypt(File.ReadAllBytes(privateKeyName));
-                        MessageBox.Show("Файл успішно дешифровано!");
+                        myRsaUnit.InputFilePath = sourceFileName;
+                        myRsaUnit.OutputFileFilePath = destFileName;
+                        myRsaUnit.OnProgresChange += MyRsaUnitOnOnProgresChange;
+                        Stopwatch sw = new Stopwatch();//for encrryption time milis
+                        sw.Start();
+                        try
+                        {
+                            myRsaUnit.Decrypt(File.ReadAllBytes(privateKeyName));
+                            label2.Invoke((MethodInvoker)delegate
+                            {
+                                label2.Text = String.Format("rsa time = {0}ms (decryption)",
+                                    sw.ElapsedMilliseconds);
+                            });
+                            MessageBox.Show("Файл успішно дешифровано!");
+                        }
+                        catch (Exception)
+                        {
+                            MessageBox.Show("Помилка дешифрування");
+                        }
+                        sw.Stop();
+
                     }
-                    catch (Exception)
-                    {
-                        MessageBox.Show("Помилка дешифрування");
-                    }
-                }
+                    _isProcessRun = false;
+                });
             }
             catch (Exception ex)
             {
@@ -364,11 +378,22 @@ namespace lab4_cryptoApiRsa
                     {
                         _isProcessRun = true;
 
+                        Stopwatch sw = new Stopwatch();
+                        sw.Start();
+
                         MyRc5 crypter = MyRc5.GetRc5(64, password, 16, 16);
                         crypter.OnDecryptedPasswordFailed += CrypterOnOnDecryptedPasswordFailed;
                         crypter.OnProgressChanged += CrypterOnOnProgressChanged;
                         crypter.OnProcessEnded += CrypterOnOnProcessEnded;
                         crypter.Decrypt(cryptedFilePath, plainFilePath);
+
+                        sw.Stop();
+                        label1.Invoke((MethodInvoker)delegate
+                        {
+                            label1.Text = String.Format("rc5 time = {0}ms (decryption)",
+                                sw.ElapsedMilliseconds);
+                        });
+
                         _isProcessRun = false;
                         MessageBox.Show("Decription complete");
                     }
