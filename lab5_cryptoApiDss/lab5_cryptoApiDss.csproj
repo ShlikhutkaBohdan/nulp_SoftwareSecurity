@@ -44,9 +44,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DsaApi\DsaSignatureCheckerApi.cs" />
-    <Compile Include="DsaApi\DsaSignatureCreatorApi.cs" />
-    <Compile Include="DsaApi\KeysFactory.cs" />
+    <Compile Include="DssUnit.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
     </Compile>
